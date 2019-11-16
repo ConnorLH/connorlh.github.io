@@ -3,15 +3,49 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://connorlh.github.io/</loc>
+    <lastmod>2019-11-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/post/</loc>
+    <lastmod>2019-11-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/2019/11/16/hello-world/</loc>
+    <lastmod>2019-11-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/search/placeholder/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/top/about/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/top/books/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://connorlh.github.io/categories/</loc>
   </url>
   
   <url>
-    <loc>https://connorlh.github.io/</loc>
+    <loc>https://connorlh.github.io/search/</loc>
   </url>
   
   <url>
     <loc>https://connorlh.github.io/tags/</loc>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/top/</loc>
   </url>
   
 </urlset>
