@@ -104,6 +104,10 @@
                         <a href="/">Home</a>
                     </li>
                     
+                    <li>
+                        <a href="/categories/tech">tech</a>
+                    </li>
+                    
                     
 		    
                         <li><a href="/top/books/">BOOKS</a></li>
@@ -201,7 +205,7 @@ const hitTemplate = function(hit) {
 
   let date = '';
   if (hit.date) {
-    date = moment.utc(hit.date).format('MMM D, YYYY');
+    date = moment.unix(hit.date).format('MMM D, YYYY');
   }
   let url = `${hit.url}#${hit.anchor}`;
   const title = hit._highlightResult.title.value;
@@ -305,6 +309,8 @@ search.start();
         <h5>FEATURED TAGS</h5>
         <div class="tags">
              
+            
+                
             
         </div>
     </section>
@@ -421,8 +427,12 @@ search.start();
 		<p class="copyright text-muted">
                     Copyright &copy; Connor Blog 2019
                     <br>
-					Thanks For <a href="https://zhaohuabing.com">Huabing</a>
-                    
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
                 </p>
             </div>
         </div>

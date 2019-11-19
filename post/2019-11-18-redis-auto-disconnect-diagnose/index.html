@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Connor Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://connorlh.github.io//img/home-bg.jpg">
+    <meta property="twitter:image" content="https://connorlh.github.io//img/home-bg.jpg" />
+    
+
+    
+    <meta name="title" content="Redis自动断开连接错误排查与修复" />
+    <meta property="og:title" content="Redis自动断开连接错误排查与修复" />
+    <meta property="twitter:title" content="Redis自动断开连接错误排查与修复" />
+    
+
+    
+    <meta name="description" content="从使用spring-boot-starter-cache`和`spring-boot-starter-data-redis`添加了redis缓存之后的异常排查过程看正确的使用方式">
+    <meta property="og:description" content="从使用spring-boot-starter-cache`和`spring-boot-starter-data-redis`添加了redis缓存之后的异常排查过程看正确的使用方式" />
+    <meta property="twitter:description" content="从使用spring-boot-starter-cache`和`spring-boot-starter-data-redis`添加了redis缓存之后的异常排查过程看正确的使用方式" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="Connor, 博客, 个人网站, 互联网, Web">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Redis自动断开连接错误排查与修复-Connor的博客 | Connor Blog</title>
+
+    <link rel="canonical" href="/post/2019-11-18-redis-auto-disconnect-diagnose/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Connor Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/categories/tech">tech</a>
+                    </li>
+                    
+                    
+		    
+                        <li><a href="/top/books/">BOOKS</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/post-bg-coffee.jpeg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/redis" title="redis">
+                            redis
+                        </a>
+                        
+                    </div>
+                    <h1>Redis自动断开连接错误排查与修复</h1>
+                    <h2 class="subheading">从Redis自动断开连接看配置的正确使用方式</h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                                 &#34;Connor&#34;
+                         
+                        on 
+                        Monday, November 18, 2019
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>TOC</h2>
+                </header>
+                <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#异常信息">异常信息</a></li>
+<li><a href="#排查过程">排查过程</a></li>
+<li><a href="#解决过程">解决过程</a>
+<ul>
+<li><a href="#客户端配置">客户端配置</a></li>
+<li><a href="#redis服务配置">Redis服务配置</a>
+<ul>
+<li><a href="#client-output-buffer-limit">client-output-buffer-limit</a></li>
+<li><a href="#timeout">timeout</a></li>
+<li><a href="#检查redis配置">检查Redis配置</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul></li>
+</ul>
+</nav>
+                
+                
+
+<h2 id="异常信息">异常信息</h2>
+
+<p>在使用<code>spring-boot-starter-cache</code>和<code>spring-boot-starter-data-redis</code>添加了redis缓存之后，程序间断的报以下异常。但是重复请求之后又能正常请求到缓存数据。</p>
+
+<pre><code class="language-text">org.springframework.data.redis.RedisConnectionFailureException: Unexpected end of stream.; nested exception is redis.clients.jedis.exceptions.JedisConnectionException: Unexpected end of stream.
+    at org.springframework.data.redis.connection.jedis.JedisExceptionConverter.convert(JedisExceptionConverter.java:67)
+    at org.springframework.data.redis.connection.jedis.JedisExceptionConverter.convert(JedisExceptionConverter.java:41)
+    at org.springframework.data.redis.PassThroughExceptionTranslationStrategy.translate(PassThroughExceptionTranslationStrategy.java:37)
+    at org.springframework.data.redis.FallbackExceptionTranslationStrategy.translate(FallbackExceptionTranslationStrategy.java:37)
+    at org.springframework.data.redis.connection.jedis.JedisConnection.convertJedisAccessException(JedisConnection.java:241)
+    at org.springframework.data.redis.connection.jedis.JedisConnection.exists(JedisConnection.java:802)
+    at org.springframework.data.redis.connection.DefaultStringRedisConnection.exists(DefaultStringRedisConnection.java:264)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(NativeMethodAccessorImpl.java)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    at org.springframework.data.redis.core.CloseSuppressingInvocationHandler.invoke(CloseSuppressingInvocationHandler.java:57)
+    at com.sun.proxy.$Proxy168.exists
+    at org.springframework.data.redis.cache.RedisCache$AbstractRedisCacheCallback.waitForLock(RedisCache.java:614)
+    at org.springframework.data.redis.cache.RedisCache$AbstractRedisCacheCallback.doInRedis(RedisCache.java:577)
+    at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:207)
+    at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:169)
+    at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:157)
+    at org.springframework.data.redis.cache.RedisCache.evict(RedisCache.java:280)
+    at org.springframework.data.redis.cache.RedisCache.evict(RedisCache.java:269)
+    at org.springframework.cache.interceptor.AbstractCacheInvoker.doEvict(AbstractCacheInvoker.java:98)
+    at org.springframework.cache.interceptor.CacheAspectSupport.performCacheEvict(CacheAspectSupport.java:477)
+    at org.springframework.cache.interceptor.CacheAspectSupport.processCacheEvicts(CacheAspectSupport.java:460)
+    at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:418)
+    at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:324)
+    at org.springframework.cache.interceptor.CacheInterceptor.invoke(CacheInterceptor.java:61)
+    at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+    at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:671)
+    ...
+    at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:204)
+    at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:736)
+    at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:157)
+    at org.springframework.aop.framework.adapter.MethodBeforeAdviceInterceptor.invoke(MethodBeforeAdviceInterceptor.java:52)
+    at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:168)
+    at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:92)
+    at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+    at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:671)
+    at com.yzw.ibuild.cscec8b.controller.HomeController$$EnhancerBySpringCGLIB$$6a4971c0.saveCostManager(&lt;generated&gt;)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(NativeMethodAccessorImpl.java)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)
+    at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:133)
+    at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:97)
+    at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:827)
+    at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:738)
+    at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:85)
+    at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:967)
+    at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:901)
+    at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:970)
+    at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:872)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:661)
+    at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:846)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:742)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.boot.web.filter.ApplicationContextHeaderFilter.doFilterInternal(ApplicationContextHeaderFilter.java:55)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.boot.actuate.trace.WebRequestTraceFilter.doFilterInternal(WebRequestTraceFilter.java:111)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:99)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.web.filter.HttpPutFormContentFilter.doFilterInternal(HttpPutFormContentFilter.java:109)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.web.filter.HiddenHttpMethodFilter.doFilterInternal(HiddenHttpMethodFilter.java:93)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:197)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.springframework.boot.actuate.autoconfigure.MetricsFilter.doFilterInternal(MetricsFilter.java:106)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:198)
+    at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
+    at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:496)
+    at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:140)
+    at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:81)
+    at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:87)
+    at org.apache.catalina.valves.RemoteIpValve.invoke(RemoteIpValve.java:677)
+    at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+    at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:803)
+    at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
+    at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:790)
+    at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1468)
+    at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+    at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+    at java.lang.Thread.run(Thread.java:748)
+</code></pre>
+
+<h2 id="排查过程">排查过程</h2>
+
+<p>注意到是<code>JedisConnectionException</code>所以推测是redis连接断开导致。检查redis的连接配置</p>
+
+<blockquote>
+<p>项目使用<code>spring-boot-starter-data-redis</code>集成redis 版本1.5.14，即Redis客户端为Jedis+连接池</p>
+</blockquote>
+
+<pre><code class="language-properties">spring.redis.database=2
+spring.redis.pool.max-idle=8
+spring.redis.pool.min-idle=1
+spring.redis.pool.max-active=8
+spring.redis.timeout=3000
+spring.redis.sentinel.master=mymaster
+spring.redis.sentinel.nodes=&lt;SentinelNodesIPs&gt;
+</code></pre>
+
+<p>发现其中并未有空闲连接自动检测的配置，推测是因为Redis设置了某个配置在客户端一段时间为使用连接时自动关闭该客户端的连接。而客户端在使用连接时并未对该连接的有效性做检查，导致上述异常。</p>
+
+<h2 id="解决过程">解决过程</h2>
+
+<h3 id="客户端配置">客户端配置</h3>
+
+<ul>
+<li><p>默认配置</p>
+
+<pre><code class="language-java">public class JedisPoolConfig extends GenericObjectPoolConfig {
+public JedisPoolConfig() {
+    this.setTestWhileIdle(true);
+    this.setMinEvictableIdleTimeMillis(60000L);
+    this.setTimeBetweenEvictionRunsMillis(30000L);
+    this.setNumTestsPerEvictionRun(-1);
+}
+}
+</code></pre></li>
+
+<li><p>添加空闲连接检测相关配置</p>
+
+<pre><code class="language-properties">spring.redis.pool.testOnBorrow=true
+spring.redis.pool.testWhileIdle=true
+spring.redis.pool.timeBetweenEvictionRunsMillis=30000
+</code></pre></li>
+</ul>
+
+<p>因为<code>spring-boot-starter-data-redis</code>并未提供以上三个配置的自动配置，所以需要自己使用代码配置<code>JedisConnectionFactory</code>的方式来设置。</p>
+
+<pre><code class="language-java">@Configuration
+public class RedisConfig {
+
+    @Autowired
+    private RedisProperties redisProperties;
+
+    @Value(&quot;${spring.redis.pool.testOnBorrow}&quot;)
+    private boolean testOnBorrow;
+
+    @Value(&quot;${spring.redis.pool.testWhileIdle}&quot;)
+    private boolean testWhileIdle;
+
+    @Value(&quot;${spring.redis.pool.timeBetweenEvictionRunsMillis}&quot;)
+    private long timeBetweenEvictionRunsMillis;
+
+    @Bean
+    public JedisPoolConfig jedisPoolConfig() {
+        JedisPoolConfig config = new JedisPoolConfig();
+        config.setMaxIdle(redisProperties.getPool().getMaxIdle());
+        config.setMinIdle(redisProperties.getPool().getMinIdle());
+        config.setMaxTotal(redisProperties.getPool().getMaxActive());
+        config.setTestOnBorrow(testOnBorrow);
+        config.setTestWhileIdle(testWhileIdle);
+        config.setTimeBetweenEvictionRunsMillis(timeBetweenEvictionRunsMillis);
+        return config;
+    }
+
+    @Bean
+    public RedisSentinelConfiguration redisSentinelConfiguration() {
+        RedisSentinelConfiguration redisSentinelConfiguration = new RedisSentinelConfiguration();
+        redisSentinelConfiguration.setMaster(redisProperties.getSentinel().getMaster());
+        Set&lt;RedisNode&gt; redisNodes = Arrays.stream(redisProperties.getSentinel().getNodes().split(&quot;,&quot;)).map(nodeStr -&gt; {
+            String[] split = nodeStr.split(&quot;:&quot;);
+            return new RedisNode(split[0], Integer.valueOf(split[1]));
+        }).collect(Collectors.toSet());
+        redisSentinelConfiguration.setSentinels(redisNodes);
+        return redisSentinelConfiguration;
+    }
+
+    @Bean
+    public JedisConnectionFactory jedisConnectionFactory(JedisPoolConfig config, RedisSentinelConfiguration redisSentinelConfiguration) {
+        JedisConnectionFactory factory = new JedisConnectionFactory(redisSentinelConfiguration, config);
+        factory.setDatabase(redisProperties.getDatabase());
+        factory.setTimeout(redisProperties.getTimeout());
+        return factory;
+    }
+}
+</code></pre>
+
+<h3 id="redis服务配置">Redis服务配置</h3>
+
+<p>服务器端主动关闭连接相关的参数有：</p>
+
+<h4 id="client-output-buffer-limit">client-output-buffer-limit</h4>
+
+<p>对于Redis服务器的输出（也就是命令的返回值）来说，其大小通常是不可控制的。有可能一个简单的命令，能够产生体积庞大的返回数据。另外也有可能因为执行了太多命令，导致产生返回数据的速率超过了往客户端发送的速率，这是也会导致服务器堆积大量消息，从而导致输出缓冲区越来越大，占用过多内存，甚至导致系统崩溃。redis有以下两种限制来避免出现这种情况，并且不同类型的客户端可以采取不同的配置。</p>
+
+<ol>
+<li>大小限制:若客户端缓冲区超过某一个设定的值，直接关闭客户端连接。</li>
+
+<li><p>持续性限制:若客户端缓冲区连续一定时间内一直超过某个设定的值时，则关闭客户端连接。</p>
+
+<pre><code class="language-conf">client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 8mb 2mb 60
+</code></pre></li>
+</ol>
+
+<p>redis把客户端分为3种，一种是普通的客户端，比如应用程序获取的jedis连接、普通的redis-cli，上面配置的三个0意思是对于客户端缓冲区无限制；第二种slave客户端，上面配置的3个参数的意思是若缓冲区超过256m则redis服务器直接关闭客户端连接，或者持续60s缓冲区一直超过64m也会关闭客户端连接。第三种是pub/sub客户端配置。通过以上几种不同的配置，redis就可以避免客户端缓冲区过大导致占用过大内存引起的问题。</p>
+
+<h4 id="timeout">timeout</h4>
+
+<p>redis为了避免客户端连接数过多，有一个timeout配置，意思是如果连接的空闲时间超过了timeout的值，则关闭连接。默认配置是0，意思是没有超时限制，永远不关闭连接。这个timeout参数配置，要跟客户端创建的连接池的参数配合起来一起使用。即客户端检测线程的运行时间间隔必须小于timeout参数，才能避免redis主动断开连接。</p>
+
+<h4 id="检查redis配置">检查Redis配置</h4>
+
+<p>Redis搭建使用Redis为主从哨兵模式</p>
+
+<p>检查所有主从实例的timeout参数发现其中一个被设置为了6s，其小于客户端默认的30s，但是其他实例timeout参数均为0。所以当客户端被分配连接到该配置错误实例时会被断开连接，但连接到其他实例并不会。</p>
+
+<p>重新设置该实例timeout为0，问题最终解决。</p>
+
+<p><strong>生产上timeout参数推荐设置为开启，此时需要注意与客户端配置匹配。</strong></p>
+
+<h2 id="总结">总结</h2>
+
+<ul>
+<li>Redis客户端与服务端均有自动断开连接的相关设置。</li>
+</ul>
+
+<p>客户端使用如下参数控制校验连接：</p>
+
+<pre><code class="language-properties"># 获取连接时校验有效性
+spring.redis.pool.testOnBorrow=true
+# 创建连接时校验有效性
+spring.redis.pool.testOnCreate=true
+# 返还连接到连接池时校验有效性
+spring.redis.pool.testOnReturn=true
+# 连接空闲时定时校验有效性
+spring.redis.pool.testWhileIdle=true
+# 连接空闲时定时校验有效性间隔时间
+spring.redis.pool.timeBetweenEvictionRunsMillis=30000
+</code></pre>
+
+<p>​       服务端使用如下参数控制主动断开连接：</p>
+
+<pre><code class="language-text"># 客户端输出缓冲区buffer大小限制
+client-output-buffer-limit
+# 空闲连接超时断开时间
+timeout
+</code></pre>
+
+<ul>
+<li><code>spring-boot-starter-data-redis</code>并不支持以上客户端的自动配置，需要自己手动配置连接工厂的连接池配置。</li>
+</ul>
+
+<h2 id="参考文章">参考文章</h2>
+
+<p><a href="http://yeming.me/2017/07/08/jedisPoolConfig/">1. JedisPool连接池相关配置</a></p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2019/11/16/hello-world/" data-toggle="tooltip" data-placement="top" title="Welcome to Connor Blog">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="Connor Blog" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/connorlh">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Connor Blog 2019
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+<script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https'){
+       bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+      }
+      else{
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+      }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+
+
+<script>
+    
+    var _baId = 'ac8a94739cc31d0ccbd18217b9c799c9';
+
+    
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+</body>
+</html>
