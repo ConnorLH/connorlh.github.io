@@ -13,10 +13,10 @@
     
     <item>
       <title>Redis自动断开连接错误排查与修复</title>
-      <link>https://connorlh.github.io/post/2019-11-18-redis-auto-disconnect-diagnose/</link>
+      <link>https://connorlh.github.io/2019/11/18/redis-auto-disconnect-diagnose/</link>
       <pubDate>Mon, 18 Nov 2019 21:00:00 +0000</pubDate>
       
-      <guid>https://connorlh.github.io/post/2019-11-18-redis-auto-disconnect-diagnose/</guid>
+      <guid>https://connorlh.github.io/2019/11/18/redis-auto-disconnect-diagnose/</guid>
       <description>异常信息 在使用spring-boot-starter-cache和spring-boot-starter-data-redis添加了redi</description>
     </item>
     
