@@ -13,10 +13,10 @@
     
     <item>
       <title>旁门左道——修改Java核心类</title>
-      <link>https://connorlh.github.io/post/2019-12-10-heterodoxy-modify-java-base-class/</link>
+      <link>https://connorlh.github.io/2019/12/10/redis-auto-disconnect-diagnose/</link>
       <pubDate>Tue, 10 Dec 2019 21:00:00 +0000</pubDate>
       
-      <guid>https://connorlh.github.io/post/2019-12-10-heterodoxy-modify-java-base-class/</guid>
+      <guid>https://connorlh.github.io/2019/12/10/redis-auto-disconnect-diagnose/</guid>
       <description>可以自定义修改java的String类吗？ 这应该是一道经典的面试题，我以前的回答也无非这两点，都是从自定义类加载器入手的： SecurityC</description>
     </item>
     
