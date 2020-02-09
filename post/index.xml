@@ -6,17 +6,26 @@
     <description>Recent content in Posts on Connor Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 10 Dec 2019 21:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 09 Feb 2020 10:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://connorlh.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>Kubernetes自定义Controller之一</title>
+      <link>https://connorlh.github.io/2020/02/09/kubernetes-custom-controller-1/</link>
+      <pubDate>Sun, 09 Feb 2020 10:00:00 +0000</pubDate>
+      
+      <guid>https://connorlh.github.io/2020/02/09/kubernetes-custom-controller-1/</guid>
+      <description>理论知识 声明式API 在 K8s 里面，声明式的体现就是 kubectl apply 命令，在对象创建和后续更新中一直使用相同的 apply 命令，告诉 K8s 对象的终态即可，底层是通过执行了一</description>
+    </item>
+    
+    <item>
       <title>旁门左道——修改Java核心类</title>
-      <link>https://connorlh.github.io/post/2019-12-10-heterodoxy-modify-java-base-class/</link>
+      <link>https://connorlh.github.io/2019/12/10/redis-auto-disconnect-diagnose/</link>
       <pubDate>Tue, 10 Dec 2019 21:00:00 +0000</pubDate>
       
-      <guid>https://connorlh.github.io/post/2019-12-10-heterodoxy-modify-java-base-class/</guid>
+      <guid>https://connorlh.github.io/2019/12/10/redis-auto-disconnect-diagnose/</guid>
       <description>可以自定义修改java的String类吗？ 这应该是一道经典的面试题，我以前的回答也无非这两点，都是从自定义类加载器入手的： SecurityC</description>
     </item>
     

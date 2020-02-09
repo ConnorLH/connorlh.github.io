@@ -4,12 +4,37 @@
   
   <url>
     <loc>https://connorlh.github.io/categories/</loc>
-    <lastmod>2019-12-10T21:00:00+00:00</lastmod>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/categories/cloudnative/</loc>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>https://connorlh.github.io/</loc>
-    <lastmod>2019-12-10T21:00:00+00:00</lastmod>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/tags/kubernetes/</loc>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/2020/02/09/kubernetes-custom-controller-1/</loc>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/post/</loc>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://connorlh.github.io/tags/</loc>
+    <lastmod>2020-02-09T10:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -23,17 +48,7 @@
   </url>
   
   <url>
-    <loc>https://connorlh.github.io/post/</loc>
-    <lastmod>2019-12-10T21:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://connorlh.github.io/tags/</loc>
-    <lastmod>2019-12-10T21:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://connorlh.github.io/post/2019-12-10-heterodoxy-modify-java-base-class/</loc>
+    <loc>https://connorlh.github.io/2019/12/10/redis-auto-disconnect-diagnose/</loc>
     <lastmod>2019-12-10T21:00:00+00:00</lastmod>
   </url>
   

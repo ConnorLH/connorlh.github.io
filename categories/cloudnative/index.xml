@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CloudNative on Connor Blog</title>
+    <link>https://connorlh.github.io/categories/cloudnative/</link>
+    <description>Recent content in CloudNative on Connor Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sun, 09 Feb 2020 10:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://connorlh.github.io/categories/cloudnative/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Kubernetes自定义Controller之一</title>
+      <link>https://connorlh.github.io/2020/02/09/kubernetes-custom-controller-1/</link>
+      <pubDate>Sun, 09 Feb 2020 10:00:00 +0000</pubDate>
+      
+      <guid>https://connorlh.github.io/2020/02/09/kubernetes-custom-controller-1/</guid>
+      <description>理论知识 声明式API 在 K8s 里面，声明式的体现就是 kubectl apply 命令，在对象创建和后续更新中一直使用相同的 apply 命令，告诉 K8s 对象的终态即可，底层是通过执行了一</description>
+    </item>
+    
+  </channel>
+</rss>

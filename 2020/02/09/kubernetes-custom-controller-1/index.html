@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Connor Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://connorlh.github.io//img/home-bg.jpg">
+    <meta property="twitter:image" content="https://connorlh.github.io//img/home-bg.jpg" />
+    
+
+    
+    <meta name="title" content="Kubernetes自定义Controller之一" />
+    <meta property="og:title" content="Kubernetes自定义Controller之一" />
+    <meta property="twitter:title" content="Kubernetes自定义Controller之一" />
+    
+
+    
+    <meta name="description" content="两篇文章分别使用CodeGenerator和Kubebuilder编写并发布自定义Controller">
+    <meta property="og:description" content="两篇文章分别使用CodeGenerator和Kubebuilder编写并发布自定义Controller" />
+    <meta property="twitter:description" content="两篇文章分别使用CodeGenerator和Kubebuilder编写并发布自定义Controller" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="Connor, 博客, 个人网站, 互联网, Web">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Kubernetes自定义Controller之一-Connor的博客 | Connor Blog</title>
+
+    <link rel="canonical" href="/2020/02/09/kubernetes-custom-controller-1">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Connor Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/categories/cloudnative">cloudnative</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/categories/heterodoxy">heterodoxy</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/categories/tech">tech</a>
+                    </li>
+                    
+                    
+		    
+                        <li><a href="/top/books/">BOOKS</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/post-bg-coffee.jpeg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/kubernetes" title="kubernetes">
+                            kubernetes
+                        </a>
+                        
+                    </div>
+                    <h1>Kubernetes自定义Controller之一</h1>
+                    <h2 class="subheading">使用CodeGenerator编写并发布自定义Controller</h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                                 &#34;Connor&#34;
+                         
+                        on 
+                        Sunday, February 9, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>TOC</h2>
+                </header>
+                <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#理论知识">理论知识</a>
+<ul>
+<li><a href="#声明式api">声明式API</a></li>
+<li><a href="#控制器模式">控制器模式</a></li>
+</ul></li>
+<li><a href="#动手实践">动手实践</a>
+<ul>
+<li><a href="#实现crd部分">实现CRD部分</a></li>
+<li><a href="#实现controller部分">实现Controller部分</a></li>
+<li><a href="#编译发布">编译发布</a></li>
+<li><a href="#日志">日志</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+                
+                
+
+<h2 id="理论知识">理论知识</h2>
+
+<h3 id="声明式api">声明式API</h3>
+
+<p>在 K8s 里面，声明式的体现就是 kubectl apply 命令，在对象创建和后续更新中一直使用相同的 apply 命令，告诉 K8s 对象的终态即可，底层是通过执行了一个对原有 API 对象的 PATCH 操作来实现的，可以一次性处理多个写操作，具备 Merge 能力 diff 出最终的 PATCH，而命令式一次只能处理一个写请求。</p>
+
+<h3 id="控制器模式">控制器模式</h3>
+
+<p>K8s 集群在部署时包含了 Controllers 组件，里面对于每个 build-in 的资源类型（比如 Deployments, Statefulset, CronJob, &hellip;）都有对应的 Controller，基本是 1:1 的关系。</p>
+
+<p>就是一个无限循环（实际是事件驱动+定时同步来实现，不是无脑循环）不断地对比期望状态和实际状态，如果有出入则进行 Reconcile（调谐）逻辑将实际状态调整为期望状态。</p>
+
+<p>期望状态就是我们的对象定义（通常是 YAML 文件），实际状态是集群里面当前的运行状态（通常来自于 K8s 集群内外相关资源的状态汇总，<strong>通过调用具体的实现程序去获取，比如网络插件、存储插件等等</strong>），控制器的编排逻辑主要是第三步做的，这个操作被称为调谐（Reconcile），整个控制器调谐的过程称为“Reconcile Loop”，调谐的最终结果一般是对被控制对象的某种写操作，比如增/删/改 Pod。</p>
+
+<h2 id="动手实践">动手实践</h2>
+
+<h3 id="实现crd部分">实现CRD部分</h3>
+
+<p>自定义资源对象networks描述文件<code>network.yaml</code></p>
+
+<pre><code class="language-yaml">apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: networks.samplecrd.k8s.io
+spec:
+  group: samplecrd.k8s.io
+  version: v1
+  names:
+    kind: Network
+    plural: networks
+  scope: Namespaced
+</code></pre>
+
+<p>自定义资源对象实例创建文件<code>example-network.yaml</code></p>
+
+<pre><code class="language-yaml">apiVersion: samplecrd.k8s.io/v1
+kind: Network
+metadata:
+  name: example-network
+spec:
+  cidr: &quot;192.168.1.0/16&quot;
+  gateway: &quot;192.168.0.1&quot;
+</code></pre>
+
+<p>上面的定义是让kubeapi知道我们的自定义资源描述，在我们自定义的controller代码中还需要定义出来，不然我们代码怎么写呢，对吧。在代码中定义自定义资源的结构体之前需要了解我们需要一个重要的东西，就是我们的controller怎么连接apiserver去获取我们关心的CRD对象呢？那就需要一个client（包括informer、lister等），这个client和我们的CRD是强相关的，我们需要自己编写代码，幸好现在有一些代码生成器可以帮我们做这个工作啦，其中一个就是<a href="https://github.com/kubernetes/code-generator">CodeGenerator</a>，要使用它就需要我们的工程目录结构符合它的规范，如下：</p>
+
+<pre><code class="language-shell">└─k8s-controller-custom-resource
+    │  controller-deployment.yaml
+    │  controller.go
+    │  Dockerfile
+    │  go.mod
+    │  go.sum
+    │  main.go
+    │  samplecrd-controller
+    │  samplecrd-controller.exe
+    │
+    ├─.idea
+    │      k8s-controller-custom-resource.iml
+    │      misc.xml
+    │      modules.xml
+    │      workspace.xml
+    │
+    ├─crd
+    │      network.yaml
+    │
+    ├─example
+    │      example-network.yaml
+    │
+    └─pkg
+        ├─apis
+        │  └─samplecrd
+        │      │  register.go
+        │      │
+        │      └─v1
+        │              doc.go
+        │              register.go
+        │              types.go
+        │              zz_generated.deepcopy.go
+        │
+        ├─client
+        │  ├─clientset
+        │  │  └─versioned
+        │  │      │  clientset.go
+        │  │      │  doc.go
+        │  │      │
+        │  │      ├─fake
+        │  │      │      clientset_generated.go
+        │  │      │      doc.go
+        │  │      │      register.go
+        │  │      │
+        │  │      ├─scheme
+        │  │      │      doc.go
+        │  │      │      register.go
+        │  │      │
+        │  │      └─typed
+        │  │          └─samplecrd
+        │  │              └─v1
+        │  │                  │  doc.go
+        │  │                  │  generated_expansion.go
+        │  │                  │  network.go
+        │  │                  │  samplecrd_client.go
+        │  │                  │
+        │  │                  └─fake
+        │  │                          doc.go
+        │  │                          fake_network.go
+        │  │                          fake_samplecrd_client.go
+        │  │
+        │  ├─informers
+        │  │  └─externalversions
+        │  │      │  factory.go
+        │  │      │  generic.go
+        │  │      │
+        │  │      ├─internalinterfaces
+        │  │      │      factory_interfaces.go
+        │  │      │
+        │  │      └─samplecrd
+        │  │          │  interface.go
+        │  │          │
+        │  │          └─v1
+        │  │                  interface.go
+        │  │                  network.go
+        │  │
+        │  └─listers
+        │      └─samplecrd
+        │          └─v1
+        │                  expansion_generated.go
+        │                  network.go
+        │
+        └─signals
+                signal.go
+                signal_posix.go
+                signal_windows.go
+</code></pre>
+
+<p>这个已经是我们的成品了，在定义CRD这一步，我们只需要关注<code>pkg\apis\samplecrd\v1\types.go</code>即可</p>
+
+<p>其代码如下</p>
+
+<pre><code class="language-go">package v1
+
+import (
+	metav1 &quot;k8s.io/apimachinery/pkg/apis/meta/v1&quot;
+)
+
+type NetworkSpec struct {
+	Cidr string `json:&quot;cidr&quot;`
+	Gateway string `json:&quot;gateway&quot;`
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type Network struct {
+	metav1.TypeMeta `json:&quot;,inline&quot;`
+	metav1.ObjectMeta `json:&quot;metadata,omitempty&quot;`
+	Spec NetworkSpec `json:&quot;spec&quot;`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type NetworkList struct {
+	metav1.TypeMeta `json:&quot;,inline&quot;`
+	metav1.ListMeta `json:&quot;metadata&quot;`
+	Items []Network `json:&quot;items&quot;`
+}
+</code></pre>
+
+<p>上述代码就定义了我们的CRD的结构体，有几点注意</p>
+
+<ol>
+<li><code>NetworkList</code>也是需要我们自己定义的，因为kubernetes在获取对象的时候都是统一返回list的</li>
+<li>代码中的go语言代码生成注解作用主要是告诉代码生成器帮我们生成哪些对象的client和实现kubernetes对象接口</li>
+</ol>
+
+<p>此外还需要编写一个注册器，将我们的定义注册到框架中去<code>pkg\apis\samplecrd\v1\register.go</code></p>
+
+<pre><code class="language-go">package v1
+
+import (
+	&quot;k8s-controller-custom-resource/pkg/apis/samplecrd&quot;
+	metav1 &quot;k8s.io/apimachinery/pkg/apis/meta/v1&quot;
+	&quot;k8s.io/apimachinery/pkg/runtime&quot;
+	&quot;k8s.io/apimachinery/pkg/runtime/schema&quot;
+)
+
+var SchemeGroupVersion = schema.GroupVersion{
+	Group:   samplecrd.GroupName,
+	Version: samplecrd.Version,
+}
+
+var (
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	AddToScheme   = SchemeBuilder.AddToScheme
+)
+
+func Resource(resource string) schema.GroupResource {
+	return SchemeGroupVersion.WithResource(resource).GroupResource()
+}
+
+func Kind(kind string) schema.GroupKind {
+	return SchemeGroupVersion.WithKind(kind).GroupKind()
+}
+
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(
+		SchemeGroupVersion,
+		&amp;Network{},
+		&amp;NetworkList{},
+	)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	return nil
+}
+</code></pre>
+
+<p>至此我们的CRD部分的定义就结束了</p>
+
+<p>下面就可以用代码生成器生成代码了</p>
+
+<blockquote>
+<p>该代码生成器无法识别windows路径，所以不要强行在windows中执行，你可以选择在docker环境中生成，别问我怎么知道的。</p>
+</blockquote>
+
+<pre><code class="language-shell">
+# 代码生成的工作目录，也就是我们的项目路径，注意需要在GOPATH下
+$ ROOT_PACKAGE=&quot;github.com/resouer/k8s-controller-custom-resource&quot;
+# API Group
+$ CUSTOM_RESOURCE_NAME=&quot;samplecrd&quot;
+# API Version
+$ CUSTOM_RESOURCE_VERSION=&quot;v1&quot;
+
+# 安装k8s.io/code-generator
+$ go get -u k8s.io/code-generator/...
+# 如果是gomod需要自行去找路径哦，最简单的是自己把github的仓库clone下来直接用
+$ cd $GOPATH/src/k8s.io/code-generator
+
+# 执行代码自动生成，其中pkg/client是生成目标目录，pkg/apis是类型定义目录
+$ ./generate-groups.sh all &quot;$ROOT_PACKAGE/pkg/client&quot; &quot;$ROOT_PACKAGE/pkg/apis&quot; &quot;$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION&quot;
+</code></pre>
+
+<p>执行完成之后就能看到client目录下面就帮我们生成了一些代码了，到这里CRD部分就完成了</p>
+
+<h3 id="实现controller部分">实现Controller部分</h3>
+
+<p><code>main.go</code>实现主要是启动informer去apiserver定时拉取（也会主动watch）我们关心的CRD对象</p>
+
+<pre><code class="language-go">package main
+
+import (
+	&quot;flag&quot;
+	&quot;github.com/golang/glog&quot;
+	&quot;k8s-controller-custom-resource/pkg/signals&quot;
+	clientset &quot;k8s-controller-custom-resource/pkg/client/clientset/versioned&quot;
+	kubeinformers &quot;k8s.io/client-go/informers&quot;
+	informers &quot;k8s-controller-custom-resource/pkg/client/informers/externalversions&quot;
+	&quot;k8s.io/client-go/kubernetes&quot;
+	&quot;k8s.io/client-go/tools/clientcmd&quot;
+	&quot;time&quot;
+)
+
+var (
+	masterURL  string
+	kubeconfig string
+)
+
+func main() {
+	flag.Parse()
+
+	stopCh := signals.SetupSignalHandler()
+
+	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+
+	if err != nil {
+		glog.Fatalf(&quot;Error building kubeconfig: %s&quot;, err.Error())
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		glog.Fatalf(&quot;Error building kubernetes clientset: %s&quot;, err.Error())
+	}
+
+	networkClient, err := clientset.NewForConfig(cfg)
+	if err != nil {
+		glog.Fatalf(&quot;Error building example clientset: %s&quot;, err.Error())
+	}
+
+	// 这个拿来获取kubernetes内建的资源对象比如deployment
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	// 这里第二个参数就是定时任务的指定时间
+	networkInformerFactory := informers.NewSharedInformerFactory(networkClient, time.Second*30)
+
+	controller := NewController(kubeClient, networkClient,
+		//kubeInformerFactory.Apps().V1().Deployments(),
+		networkInformerFactory.Samplecrd().V1().Networks())
+
+	// 这里启动方法已经不是阻塞的了，不用使用goroutine了
+	kubeInformerFactory.Start(stopCh)
+	networkInformerFactory.Start(stopCh)
+
+	if err = controller.Run(2, stopCh); err != nil {
+		glog.Fatalf(&quot;Error running controller: %s&quot;, err.Error())
+	}
+}
+
+func init() {
+	// 选择性传入kubeconfig配置文件，要连接apiserver当然需要它啦，在pod部署的时候就不用了，默认的initconfig机制会读取自动注入的ServiceAccount
+	flag.StringVar(&amp;kubeconfig, &quot;kubeconfig&quot;, &quot;&quot;, &quot;Path to a kubeconfig. Only required if out-of-cluster.&quot;)
+	// 选择性传入apiserver的连接地址，这个会覆盖上面kubeconfig中的地址，感觉这个参数很鸡肋
+	flag.StringVar(&amp;masterURL, &quot;master&quot;, &quot;&quot;, &quot;The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.&quot;)
+}
+</code></pre>
+
+<p><code>controller.go</code>主要就是informer拿到对象之后放入缓存队列中之后我们需要自行从缓存中读取出来，开启处理worker进行处理，这里需要创建一个工作队列，防止worker处理不过来，导致缓存队列积压。从工作队列中拿到后主要就是我们的具体处理逻辑了。</p>
+
+<pre><code class="language-go">package main
+
+import (
+	&quot;fmt&quot;
+	&quot;time&quot;
+
+	&quot;github.com/golang/glog&quot;
+	corev1 &quot;k8s.io/api/core/v1&quot;
+	&quot;k8s.io/apimachinery/pkg/api/errors&quot;
+	&quot;k8s.io/apimachinery/pkg/util/runtime&quot;
+	utilruntime &quot;k8s.io/apimachinery/pkg/util/runtime&quot;
+	&quot;k8s.io/apimachinery/pkg/util/wait&quot;
+	&quot;k8s.io/client-go/kubernetes&quot;
+	&quot;k8s.io/client-go/kubernetes/scheme&quot;
+	typedcorev1 &quot;k8s.io/client-go/kubernetes/typed/core/v1&quot;
+	&quot;k8s.io/client-go/tools/cache&quot;
+	&quot;k8s.io/client-go/tools/record&quot;
+	&quot;k8s.io/client-go/util/workqueue&quot;
+
+	samplecrdv1 &quot;k8s-controller-custom-resource/pkg/apis/samplecrd/v1&quot;
+	clientset &quot;k8s-controller-custom-resource/pkg/client/clientset/versioned&quot;
+	networkscheme &quot;k8s-controller-custom-resource/pkg/client/clientset/versioned/scheme&quot;
+	informers &quot;k8s-controller-custom-resource/pkg/client/informers/externalversions/samplecrd/v1&quot;
+	listers &quot;k8s-controller-custom-resource/pkg/client/listers/samplecrd/v1&quot;
+)
+
+const controllerAgentName = &quot;network-controller&quot;
+
+const (
+	// SuccessSynced is used as part of the Event 'reason' when a Network is synced
+	SuccessSynced = &quot;Synced&quot;
+
+	// MessageResourceSynced is the message used for an Event fired when a Network
+	// is synced successfully
+	MessageResourceSynced = &quot;Network synced successfully&quot;
+)
+
+// Controller is the controller implementation for Network resources
+type Controller struct {
+	// kubeclientset is a standard kubernetes clientset
+	kubeclientset kubernetes.Interface
+	// networkclientset is a clientset for our own API group
+	networkclientset clientset.Interface
+
+	networksLister listers.NetworkLister
+	networksSynced cache.InformerSynced
+
+	// workqueue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens. This
+	// means we can ensure we only process a fixed amount of resources at a
+	// time, and makes it easy to ensure we are never processing the same item
+	// simultaneously in two different workers.
+	workqueue workqueue.RateLimitingInterface
+	// recorder is an event recorder for recording Event resources to the
+	// Kubernetes API.
+	recorder record.EventRecorder
+}
+
+// NewController returns a new network controller
+func NewController(
+	kubeclientset kubernetes.Interface,
+	networkclientset clientset.Interface,
+	networkInformer informers.NetworkInformer) *Controller {
+
+	// Create event broadcaster
+	// Add sample-controller types to the default Kubernetes Scheme so Events can be
+	// logged for sample-controller types.
+	utilruntime.Must(networkscheme.AddToScheme(scheme.Scheme))
+	glog.V(4).Info(&quot;Creating event broadcaster&quot;)
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartRecordingToSink(&amp;typedcorev1.EventSinkImpl{Interface: kubeclientset.CoreV1().Events(&quot;&quot;)})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
+
+	controller := &amp;Controller{
+		kubeclientset:    kubeclientset,
+		networkclientset: networkclientset,
+		networksLister:   networkInformer.Lister(),
+		networksSynced:   networkInformer.Informer().HasSynced,
+		workqueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), &quot;Networks&quot;),
+		recorder:         recorder,
+	}
+
+	glog.Info(&quot;Setting up event handlers&quot;)
+	// Set up an event handler for when Network resources change
+	networkInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.enqueueNetwork,
+		UpdateFunc: func(old, new interface{}) {
+			oldNetwork := old.(*samplecrdv1.Network)
+			newNetwork := new.(*samplecrdv1.Network)
+			if oldNetwork.ResourceVersion == newNetwork.ResourceVersion {
+				// Periodic resync will send update events for all known Networks.
+				// Two different versions of the same Network will always have different RVs.
+				return
+			}
+			controller.enqueueNetwork(new)
+		},
+		DeleteFunc: controller.enqueueNetworkForDelete,
+	})
+
+	return controller
+}
+
+// Run will set up the event handlers for types we are interested in, as well
+// as syncing informer caches and starting workers. It will block until stopCh
+// is closed, at which point it will shutdown the workqueue and wait for
+// workers to finish processing their current work items.
+func (c *Controller) Run(threadiness int, stopCh &lt;-chan struct{}) error {
+	defer runtime.HandleCrash()
+	defer c.workqueue.ShutDown()
+
+	// Start the informer factories to begin populating the informer caches
+	glog.Info(&quot;Starting Network control loop&quot;)
+
+	// Wait for the caches to be synced before starting workers
+	glog.Info(&quot;Waiting for informer caches to sync&quot;)
+	if ok := cache.WaitForCacheSync(stopCh, c.networksSynced); !ok {
+		return fmt.Errorf(&quot;failed to wait for caches to sync&quot;)
+	}
+
+	glog.Info(&quot;Starting workers&quot;)
+	// Launch two workers to process Network resources
+	for i := 0; i &lt; threadiness; i++ {
+		go wait.Until(c.runWorker, time.Second, stopCh)
+	}
+
+	glog.Info(&quot;Started workers&quot;)
+	&lt;-stopCh
+	glog.Info(&quot;Shutting down workers&quot;)
+
+	return nil
+}
+
+// runWorker is a long-running function that will continually call the
+// processNextWorkItem function in order to read and process a message on the
+// workqueue.
+func (c *Controller) runWorker() {
+	for c.processNextWorkItem() {
+	}
+}
+
+// processNextWorkItem will read a single work item off the workqueue and
+// attempt to process it, by calling the syncHandler.
+func (c *Controller) processNextWorkItem() bool {
+	obj, shutdown := c.workqueue.Get()
+
+	if shutdown {
+		return false
+	}
+
+	// We wrap this block in a func so we can defer c.workqueue.Done.
+	err := func(obj interface{}) error {
+		// We call Done here so the workqueue knows we have finished
+		// processing this item. We also must remember to call Forget if we
+		// do not want this work item being re-queued. For example, we do
+		// not call Forget if a transient error occurs, instead the item is
+		// put back on the workqueue and attempted again after a back-off
+		// period.
+		defer c.workqueue.Done(obj)
+		var key string
+		var ok bool
+		// We expect strings to come off the workqueue. These are of the
+		// form namespace/name. We do this as the delayed nature of the
+		// workqueue means the items in the informer cache may actually be
+		// more up to date that when the item was initially put onto the
+		// workqueue.
+		if key, ok = obj.(string); !ok {
+			// As the item in the workqueue is actually invalid, we call
+			// Forget here else we'd go into a loop of attempting to
+			// process a work item that is invalid.
+			c.workqueue.Forget(obj)
+			runtime.HandleError(fmt.Errorf(&quot;expected string in workqueue but got %#v&quot;, obj))
+			return nil
+		}
+		// Run the syncHandler, passing it the namespace/name string of the
+		// Network resource to be synced.
+		if err := c.syncHandler(key); err != nil {
+			return fmt.Errorf(&quot;error syncing '%s': %s&quot;, key, err.Error())
+		}
+		// Finally, if no error occurs we Forget this item so it does not
+		// get queued again until another change happens.
+		c.workqueue.Forget(obj)
+		glog.Infof(&quot;Successfully synced '%s'&quot;, key)
+		return nil
+	}(obj)
+
+	if err != nil {
+		runtime.HandleError(err)
+		return true
+	}
+
+	return true
+}
+
+// syncHandler compares the actual state with the desired, and attempts to
+// converge the two. It then updates the Status block of the Network resource
+// with the current status of the resource.
+func (c *Controller) syncHandler(key string) error {
+	// Convert the namespace/name string into a distinct namespace and name
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf(&quot;invalid resource key: %s&quot;, key))
+		return nil
+	}
+
+	// Get the Network resource with this namespace/name
+	network, err := c.networksLister.Networks(namespace).Get(name)
+	if err != nil {
+		// The Network resource may no longer exist, in which case we stop
+		// processing.
+		if errors.IsNotFound(err) {
+			glog.Warningf(&quot;Network: %s/%s does not exist in local cache, will delete it from Neutron ...&quot;,
+				namespace, name)
+
+			glog.Infof(&quot;[Neutron] Deleting network: %s/%s ...&quot;, namespace, name)
+
+			// FIX ME: call Neutron API to delete this network by name.
+			//
+			// neutron.Delete(namespace, name)
+
+			return nil
+		}
+
+		runtime.HandleError(fmt.Errorf(&quot;failed to list network by: %s/%s&quot;, namespace, name))
+
+		return err
+	}
+
+	glog.Infof(&quot;[Neutron] Try to process network: %#v ...&quot;, network)
+
+	// FIX ME: Do diff().
+	//
+	// actualNetwork, exists := neutron.Get(namespace, name)
+	//
+	// if !exists {
+	// 	neutron.Create(namespace, name)
+	// } else if !reflect.DeepEqual(actualNetwork, network) {
+	// 	neutron.Update(namespace, name)
+	// }
+
+	c.recorder.Event(network, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	return nil
+}
+
+// enqueueNetwork takes a Network resource and converts it into a namespace/name
+// string which is then put onto the work queue. This method should *not* be
+// passed resources of any type other than Network.
+func (c *Controller) enqueueNetwork(obj interface{}) {
+	var key string
+	var err error
+	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
+		runtime.HandleError(err)
+		return
+	}
+	c.workqueue.AddRateLimited(key)
+}
+
+// enqueueNetworkForDelete takes a deleted Network resource and converts it into a namespace/name
+// string which is then put onto the work queue. This method should *not* be
+// passed resources of any type other than Network.
+func (c *Controller) enqueueNetworkForDelete(obj interface{}) {
+	var key string
+	var err error
+	key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		runtime.HandleError(err)
+		return
+	}
+	c.workqueue.AddRateLimited(key)
+}
+</code></pre>
+
+<p>至此我们的自定义Controller就编写好了，有以下几点需要注意：</p>
+
+<ol>
+<li>工作队列中保存的只是namespace/name，需要我们自己通过这个去缓存中拿真正的对象（这一步需要使用索引）</li>
+<li>对于删除对象的事件，我们获取对象是获取不到的，这点我们使用kubebuilder之后再讲解，可以使用finalizer机制进行解决</li>
+<li>我们拿到的只是对象的期望状态，实际该对象的状态是需要我们自己调用底层程序去获取的，比如调用网络插件获取当前的网络状态，然后才能进行对比调谐</li>
+<li>informer会watch对象的变化，也会定时获取，所以比如我们删除了deployment下的pod，虽然不会触发deployment对象本身的变化，但是在定时拉取后检测当前状态是就会发现少了一个pod</li>
+</ol>
+
+<h3 id="编译发布">编译发布</h3>
+
+<p>本地编译发布就不说了，注意启动的时候要传入kubeconfig文件参数就行了。主要说说pod的编译发布，在windows环境下跨平台的编译这么做</p>
+
+<pre><code class="language-pow">set CGO_ENABLED=0
+set GOOS=linux
+set GOARCH=amd64
+go build -o samplecrd-controller .
+</code></pre>
+
+<p>构建镜像</p>
+
+<pre><code class="language-dockerfile">FROM scratch
+VOLUME /tmp
+ADD samplecrd-controller .
+ENTRYPOINT [&quot;/samplecrd-controller&quot;,&quot;-alsologtostderr=true&quot;]
+</code></pre>
+
+<p>然后deployment发布吧</p>
+
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samplecrd-controller
+  labels:
+    controller: samplecrd-controller
+spec:
+  selector:
+    matchLabels:
+      controller: samplecrd-controller
+  template:
+    metadata:
+      labels:
+        controller: samplecrd-controller
+    spec:
+      containers:
+        - name: samplecrd-controller
+          image: samplecrd-controller
+          imagePullPolicy: IfNotPresent
+          command: [&quot;/samplecrd-controller&quot;,&quot;-alsologtostderr=true&quot;]
+</code></pre>
+
+<h3 id="日志">日志</h3>
+
+<p>启动，创建CRD，创建CRD对象，删除CRD对象的日志如下</p>
+
+<pre><code class="language-tex">E0209 09:48:55.521173       1 reflector.go:153] pkg/mod/k8s.io/client-go@v0.17.2/tools/cache/reflector.go:105: Failed to list *v1.Network: the server could not find the requested resource (get networks.samplecrd.k8s.io)
+E0209 09:48:56.522469       1 reflector.go:153] pkg/mod/k8s.io/client-go@v0.17.2/tools/cache/reflector.go:105: Failed to list *v1.Network: the server could not find the requested resource (get networks.samplecrd.k8s.io)
+E0209 09:48:57.524127       1 reflector.go:153] pkg/mod/k8s.io/client-go@v0.17.2/tools/cache/reflector.go:105: Failed to list *v1.Network: the server could not find the requested resource (get networks.samplecrd.k8s.io)
+E0209 09:48:58.525426       1 reflector.go:153] pkg/mod/k8s.io/client-go@v0.17.2/tools/cache/reflector.go:105: Failed to list *v1.Network: the server could not find the requested resource (get networks.samplecrd.k8s.io)
+I0209 09:48:59.652860       1 controller.go:121] Starting workers
+I0209 09:48:59.652938       1 controller.go:127] Started workers
+I0209 09:49:14.535882       1 controller.go:229] [Neutron] Try to process network: &amp;v1.Network{TypeMeta:v1.TypeMeta{Kind:&quot;&quot;, APIVersion:&quot;&quot;}, ObjectMeta:v1.ObjectMeta{Name:&quot;example-network&quot;, GenerateName:&quot;&quot;, Namespace:&quot;default&quot;, SelfLink:&quot;/apis/samplecrd.k8s.io/v1/namespaces/default/networks/example-network&quot;, UID:&quot;6e5240c0-4b21-11ea-958c-00155d89014d&quot;, ResourceVersion:&quot;125037&quot;, Generation:1, CreationTimestamp:v1.Time{Time:time.Time{wall:0x0, ext:63716838554, loc:(*time.Location)(0x1f96500)}}, DeletionTimestamp:(*v1.Time)(nil), DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string{&quot;kubectl.kubernetes.io/last-applied-configuration&quot;:&quot;{\&quot;apiVersion\&quot;:\&quot;samplecrd.k8s.io/v1\&quot;,\&quot;kind\&quot;:\&quot;Network\&quot;,\&quot;metadata\&quot;:{\&quot;annotations\&quot;:{},\&quot;name\&quot;:\&quot;example-network\&quot;,\&quot;namespace\&quot;:\&quot;default\&quot;},\&quot;spec\&quot;:{\&quot;cidr\&quot;:\&quot;192.168.1.0/16\&quot;,\&quot;gateway\&quot;:\&quot;192.168.0.1\&quot;}}\n&quot;}, OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ClusterName:&quot;&quot;, ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1.NetworkSpec{Cidr:&quot;192.168.1.0/16&quot;, Gateway:&quot;192.168.0.1&quot;}} ...
+I0209 09:49:14.536053       1 controller.go:183] Successfully synced 'default/example-network'
+I0209 09:49:14.536127       1 event.go:281] Event(v1.ObjectReference{Kind:&quot;Network&quot;, Namespace:&quot;default&quot;, Name:&quot;example-network&quot;, UID:&quot;6e5240c0-4b21-11ea-958c-00155d89014d&quot;, APIVersion:&quot;samplecrd.k8s.io/v1&quot;, ResourceVersion:&quot;125037&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'Synced' Network synced successfully
+W0209 09:49:51.398407       1 controller.go:212] Network: default/example-network does not exist in local cache, will delete it from Neutron ...
+I0209 09:49:51.400281       1 controller.go:215] [Neutron] Deleting network: default/example-network ...
+I0209 09:49:51.400337       1 controller.go:183] Successfully synced 'default/example-network'
+</code></pre>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2019/12/10/redis-auto-disconnect-diagnose" data-toggle="tooltip" data-placement="top" title="旁门左道——修改Java核心类">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="Connor Blog" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/connorlh">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Connor Blog 2020
+                    <br>
+                    Thanks For <a href="https://zhaohuabing.com">Huabing</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+<script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https'){
+       bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+      }
+      else{
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+      }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+
+
+<script>
+    
+    var _baId = 'ac8a94739cc31d0ccbd18217b9c799c9';
+
+    
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+
+</body>
+</html>
