@@ -242,7 +242,7 @@
 
 <p>但是真的不能对核心类库进行修改吗？</p>
 
-<p>我最近学习了一个新的知识点，可以对其进行修改，这就是指定bootclasspath启动参数的方式。</p>
+<p>我最近学习了一个新的知识点，可以对其进行修改，这就是指定bootclasspath启动参数的方式，指定优先加载我们自己的类即可。</p>
 
 <h2 id="示例">示例</h2>
 
@@ -256,19 +256,34 @@
 
 <p>代码如下：</p>
 
+<pre><code class="language-shell">└─experiment
+    │  TestClass.class
+    │
+    └─java
+        └─lang
+                StringBuilder.class
+</code></pre>
+
 <p><strong>StringBuilder.java</strong></p>
 
-<pre><code class="language-java">public final class StringBuilder {
+<pre><code class="language-java">package java.lang;
+
+public final class StringBuilder
+        extends AbstractStringBuilder
+        implements java.io.Serializable, CharSequence  {
 	public int lastIndexOf(String str) {
 		System.out.println(str);
         return 1;
     }
+    ... 省略其他方法
 }
 </code></pre>
 
 <p><strong>TestClass.java</strong></p>
 
-<pre><code class="language-java">public class TestClass {
+<pre><code class="language-java">import java.lang.StringBuilder;
+
+public class TestClass {
 	public static void main(String[] args) {
 		StringBuilder builder = new StringBuilder();
         int i = builder.lastIndexOf(&quot;Success Modify StringBuilder&quot;);
